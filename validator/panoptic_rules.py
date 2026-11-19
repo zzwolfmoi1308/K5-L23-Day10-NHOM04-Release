@@ -79,7 +79,7 @@ def check_panoptic_rules(delivery_dir: Path | str) -> list[dict]:
         # --- LUẬT 2: thing_overlap ---
         # Chỉ kiểm tra thing_overlap nếu có các segment thuộc dạng "thing" và không phải crowd
         thing_segments = [s for s in segments if s.get("category_id") in thing_cat_ids and not s.get("iscrowd")]
-        if len(thing_segments) < 2:
+        if not thing_segments:
             continue
 
         mask_file_name = ann.get("file_name", f"{img_id:012d}.png")
@@ -109,6 +109,11 @@ def check_panoptic_rules(delivery_dir: Path | str) -> list[dict]:
             errors.append({"type": "thing_overlap", "target": target})
 
     return errors
+
+
+def check_rules(delivery: Path) -> list[dict]:
+    """Entry point used by the group validator."""
+    return check_panoptic_rules(delivery)
 
 
 def main() -> int:

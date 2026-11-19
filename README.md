@@ -2,7 +2,7 @@
   <img src="docs/assets/hero.png" alt="Day 10 Lab: Bàn giao dataset và Truy vết" width="100%">
 </p>
 
-# Day 10 Lab — Bàn giao dataset & Truy vết
+# Day 10 Lab — Nhóm 04
 
 <p align="center">
   <img alt="nhóm" src="https://img.shields.io/badge/lab-nhóm%205–6%20người-0b1f3a">
@@ -64,7 +64,7 @@ flowchart LR
 4. Làm theo **[GUIDE.md](GUIDE.md)** từ **P1**. Đọc trước định dạng lô ở [docs/DELIVERY.md](docs/DELIVERY.md).
 5. Trước khi nộp: `python scripts/check_handover.py --run runs/r<seed>` không còn FAIL.
 
-> **Khi nộp:** đổi dòng tiêu đề này thành `# Day 10 Lab — Nhóm <XX>`. Xem [SUBMISSION.md](SUBMISSION.md).
+> **Khi nộp:** làm theo checklist trong [SUBMISSION.md](SUBMISSION.md).
 
 <details>
 <summary><b>Vì sao không có nhãn gốc để so?</b></summary>
