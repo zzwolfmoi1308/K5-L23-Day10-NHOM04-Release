@@ -24,6 +24,11 @@ import math
 import sys
 from pathlib import Path
 
+if __package__:
+    from .delivery import delivery_path as resolve_delivery_path
+else:
+    from delivery import delivery_path as resolve_delivery_path
+
 # Tập 7 loại lỗi luật File, YOLO và Metadata thuộc phạm vi module này
 DETECTION_RULE_TYPES: frozenset[str] = frozenset({
     "missing_image",
@@ -36,13 +41,12 @@ DETECTION_RULE_TYPES: frozenset[str] = frozenset({
 })
 
 # Ngưỡng sai số cho bbox_out_of_bounds để tránh báo nhầm do làm tròn số thực (.6f) ở mép [0, 1]
-BBOX_OOB_EPS = 1e-3
+BBOX_OOB_EPS = 1e-6
 
 # Ngưỡng cho duplicate_box theo 2 chế độ:
-# 1) IoU rất cao + kích thước gần giống nhau (vượt xa ngưỡng chồng tự nhiên <= 0.70 của COCO)
+# IoU cao cho phép tâm lệch thêm một vài pixel, với cùng điều kiện kích thước.
 DUP_HIGH_IOU = 0.80
-DUP_HIGH_IOU_SIZE_REL_TOL = 0.05
-# 2) Kích thước gần như giống hệt + lệch tâm rất nhỏ (bắt cả box nhỏ bị dịch 1-2 px khi IoU < 0.80)
+DUP_HIGH_IOU_CENTER_PX_TOL = 5.01
 DUP_SAME_SIZE_REL_TOL = 0.015
 DUP_SAME_SIZE_PX_TOL = 1.0
 DUP_CENTER_PX_TOL = 3.0
@@ -64,7 +68,7 @@ def sha256_file(path: Path) -> str:
 
 def load_valid_classes(delivery_path: Path) -> set[int]:
     """Đọc tập class_id hợp lệ từ classes.txt (mặc định 0..79 nếu thiếu file)."""
-    classes_path = delivery_path / "classes.txt"
+    classes_path = resolve_delivery_path(delivery_path, "classes.txt")
     if not classes_path.is_file():
         return set(range(80))
 
@@ -83,7 +87,7 @@ def load_valid_classes(delivery_path: Path) -> set[int]:
 
 def load_jobs(delivery_path: Path) -> dict[str, dict[str, str]]:
     """Đọc bảng jobs.csv thành ánh xạ job_id -> thông tin job."""
-    jobs_path = delivery_path / "jobs.csv"
+    jobs_path = resolve_delivery_path(delivery_path, "jobs.csv")
     if not jobs_path.is_file():
         return {}
     jobs: dict[str, dict[str, str]] = {}
@@ -102,7 +106,7 @@ def load_jobs(delivery_path: Path) -> dict[str, dict[str, str]]:
 
 def load_image_sizes(delivery_path: Path) -> dict[str, tuple[int, int]]:
     """Đọc kích thước (width, height) từng ảnh từ panoptic.json (không cần Pillow)."""
-    panoptic_path = delivery_path / "panoptic.json"
+    panoptic_path = resolve_delivery_path(delivery_path, "panoptic.json")
     if not panoptic_path.is_file():
         return {}
     data = json.loads(panoptic_path.read_text(encoding="utf-8-sig"))
@@ -147,7 +151,7 @@ def check_missing_and_hash(
     findings: list[dict[str, str]] = []
     for name, item in manifest_items.items():
         img_rel = item.get("image")
-        img_path = delivery_path / img_rel if img_rel else None
+        img_path = resolve_delivery_path(delivery_path, img_rel) if img_rel else None
 
         # Luật 1: missing_image
         if img_path is None or not img_path.is_file():
@@ -164,7 +168,7 @@ def check_missing_and_hash(
             rel = item.get(file_key)
             if not rel or hash_key not in item:
                 continue
-            target_path = delivery_path / rel
+            target_path = img_path if file_key == "image" else resolve_delivery_path(delivery_path, rel)
             if not target_path.is_file():
                 continue
             expected = str(item.get(hash_key) or "").strip().lower()
@@ -217,11 +221,9 @@ def is_duplicate_pair(
 ) -> bool:
     """Kiểm tra 2 box (cùng class_id) có phải là box bị lặp không.
 
-    Kết hợp 2 chế độ để vừa bắt được box nhỏ bị lặp lệch 1-2 px (khi IoU thấp hơn 0.80)
-    vừa tránh báo nhầm các cặp vật thể tự nhiên chồng nhau trong COCO (IoU <= ~0.66):
-    1. IoU >= 0.80 và kích thước chênh <= 5% (độc lập độ phân giải, bắt cả box lớn lệch vài px).
-    2. Kích thước gần như giống hệt (<= 1.5% và <= 1 px) + độ lệch tâm <= 3 px
-       (yêu cầu có giao nhau, trừ box siêu nhỏ <= 4 px có thể chỉ chạm cạnh khi dịch 2 px).
+    Với kích thước ảnh, hai box phải gần như cùng kích thước (<= 1.5% và <= 1 px).
+    Cặp có IoU cao được phép lệch tâm đến khoảng 5 px. Cặp box rất nhỏ có thể
+    chỉ chạm cạnh khi tâm dịch 2 px, nên dùng khoảng cách tâm cho trường hợp đó.
     """
     ca, xa, ya, wa, ha = box_a
     cb, xb, yb, wb, hb = box_b
@@ -234,11 +236,6 @@ def is_duplicate_pair(
     rel_dw = abs(wa - wb) / max_w
     rel_dh = abs(ha - hb) / max_h
 
-    # Chế độ 1: IoU rất cao + kích thước gần giống nhau (vượt xa ngưỡng tự nhiên <= 0.70 của COCO)
-    if iou >= DUP_HIGH_IOU and rel_dw <= DUP_HIGH_IOU_SIZE_REL_TOL and rel_dh <= DUP_HIGH_IOU_SIZE_REL_TOL:
-        return True
-
-    # Chế độ 2: có kích thước ảnh (px) -> kiểm kích thước gần như giống hệt + độ lệch tâm rất nhỏ
     if img_size is not None:
         img_w, img_h = img_size
         dx_px = abs(xa - xb) * img_w
@@ -252,17 +249,15 @@ def is_duplicate_pair(
             and dw_px <= DUP_SAME_SIZE_PX_TOL
             and dh_px <= DUP_SAME_SIZE_PX_TOL
         )
-        if same_size:
-            if iou > 0.0 and dx_px <= DUP_CENTER_PX_TOL and dy_px <= DUP_CENTER_PX_TOL:
-                return True
-            min_side_px = min(wa * img_w, ha * img_h, wb * img_w, hb * img_h)
-            if (
-                min_side_px <= DUP_TINY_BOX_PX
-                and dx_px <= DUP_TINY_CENTER_PX_TOL
-                and dy_px <= DUP_TINY_CENTER_PX_TOL
-            ):
-                return True
-        return False
+        if not same_size:
+            return False
+        center_shift = max(dx_px, dy_px)
+        if iou >= DUP_HIGH_IOU and center_shift <= DUP_HIGH_IOU_CENTER_PX_TOL:
+            return True
+        if iou > 0.0 and center_shift <= DUP_CENTER_PX_TOL:
+            return True
+        min_side_px = min(wa * img_w, ha * img_h, wb * img_w, hb * img_h)
+        return min_side_px <= DUP_TINY_BOX_PX and center_shift <= DUP_TINY_CENTER_PX_TOL
 
     # Dự phòng khi không có kích thước ảnh trong panoptic.json
     if (
@@ -291,7 +286,7 @@ def check_yolo_labels(
         label_rel = item.get("label")
         if not label_rel:
             continue
-        label_path = delivery_path / label_rel
+        label_path = resolve_delivery_path(delivery_path, label_rel)
         if not label_path.is_file():
             continue
 
@@ -337,6 +332,7 @@ def check_yolo_labels(
             x2, y2 = x + w / 2.0, y + h / 2.0
             if x1 < -oob_eps or y1 < -oob_eps or x2 > 1.0 + oob_eps or y2 > 1.0 + oob_eps:
                 has_oob = True
+                continue
 
             if cls_id in valid_class_ids:
                 boxes.append((cls_id, x, y, w, h))
@@ -369,8 +365,8 @@ def check_detection_rules(delivery_dir: Path | str) -> list[dict[str, str]]:
     Định dạng trả về: [{"type": "<loại_lỗi>", "target": "<target>"}, ...] đã loại trùng và sắp xếp.
     """
     delivery_path = Path(delivery_dir)
-    manifest_path = delivery_path / "manifest.json"
-    metadata_path = delivery_path / "metadata.json"
+    manifest_path = resolve_delivery_path(delivery_path, "manifest.json")
+    metadata_path = resolve_delivery_path(delivery_path, "metadata.json")
 
     manifest_items: dict[str, dict] = {}
     if manifest_path.is_file():
@@ -407,9 +403,14 @@ def main() -> int:
         print(f"Lỗi: Thư mục không tồn tại: {delivery_path}", file=sys.stderr)
         return 1
 
-    findings = check_detection_rules(delivery_path)
-    if args.out:
-        out_path = Path(args.out)
+    out_path = Path(args.out) if args.out else None
+    if out_path is not None and out_path.resolve().is_relative_to(delivery_path.resolve()):
+        parser.error("File đầu ra phải nằm ngoài delivery.")
+    try:
+        findings = check_detection_rules(delivery_path)
+    except (OSError, ValueError) as exc:
+        parser.exit(1, f"Không kiểm tra được lô: {exc}\n")
+    if out_path is not None:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(
             json.dumps({"errors": findings}, ensure_ascii=False, indent=2) + "\n",
