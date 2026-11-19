@@ -235,6 +235,15 @@ class DetectionRulesTest(unittest.TestCase):
                 ],
             )
 
+    def test_bbox_out_of_bounds_smaller_than_one_pixel(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = _make_clean_delivery(Path(tmp))
+            _set_label(d, "img_0001", b"0 0.900500 0.500000 0.200000 0.200000\n")
+            self.assertEqual(
+                check_detection_rules(d),
+                [{"type": "bbox_out_of_bounds", "target": "img_0001"}],
+            )
+
     def test_duplicate_box_catches_shifted_same_size_and_ignores_natural_overlap(self):
         with tempfile.TemporaryDirectory() as tmp:
             d = _make_clean_delivery(Path(tmp))
@@ -295,21 +304,53 @@ class DetectionRulesTest(unittest.TestCase):
         sep_b = (0, 215 / 640, 200 / 480, 40 / 640, 40 / 480)
         self.assertFalse(is_duplicate_pair(sep_a, sep_b, img_size))
 
+    def test_duplicate_box_high_iou_still_requires_same_size_and_nearby_centers(self):
+        img_size = (640, 480)
+        reference = (0, 0.5, 0.5, 200 / 640, 100 / 480)
+        different_size = (0, 0.5, 0.5, 208 / 640, 104 / 480)
+        far_center = (0, 0.5 + 15 / 640, 0.5, 200 / 640, 100 / 480)
+        self.assertFalse(is_duplicate_pair(reference, different_size, img_size))
+        self.assertFalse(is_duplicate_pair(reference, far_center, img_size))
+
+    def test_manifest_cannot_point_outside_delivery(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = _make_clean_delivery(Path(tmp))
+            (d.parent / "outside.jpg").write_bytes(b"outside the fixture delivery")
+            manifest_path = d / "manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["items"]["img_0001"]["image"] = "../outside.jpg"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "ngoài delivery"):
+                check_detection_rules(d)
+
     def test_cli_writes_standard_errors_json_schema(self):
         with tempfile.TemporaryDirectory() as tmp:
             d = _make_clean_delivery(Path(tmp))
             (d / "images" / "img_0001.jpg").unlink()
             out_json = Path(tmp) / "out" / "errors.json"
             proc = subprocess.run(
-                [sys.executable, str(ROOT / "validator" / "detection_rules.py"), str(d), "--out", str(out_json)],
+                [sys.executable, "-X", "utf8", str(ROOT / "validator" / "detection_rules.py"), str(d), "--out", str(out_json)],
                 check=True,
                 capture_output=True,
-                text=True,
+                encoding="utf-8",
             )
             self.assertEqual(proc.returncode, 0)
             doc = json.loads(out_json.read_text(encoding="utf-8"))
             self.assertEqual(doc, {"errors": [{"type": "missing_image", "target": "img_0001"}]})
             self.assertTrue(all(e["type"] in DETECTION_RULE_TYPES for e in doc["errors"]))
+
+    def test_cli_rejects_output_within_delivery(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = _make_clean_delivery(Path(tmp))
+            out_json = d / "errors.json"
+            proc = subprocess.run(
+                [sys.executable, "-X", "utf8", str(ROOT / "validator" / "detection_rules.py"), str(d), "--out", str(out_json)],
+                capture_output=True,
+                encoding="utf-8",
+            )
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("ngoài delivery", proc.stderr)
+            self.assertFalse(out_json.exists())
 
     @unittest.skipUnless(HAVE_CALIB, "chưa có dữ liệu calib: python scripts/download_public.py")
     def test_real_clean_calib_batch_has_zero_detection_rule_errors(self):
