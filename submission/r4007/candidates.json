@@ -1,0 +1,301 @@
+{
+  "candidates": [
+    {
+      "type": "instance_merge",
+      "target": "000000002153",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 1,
+              "class": "person",
+              "xyxy": [
+                283.4,
+                274.77,
+                466.31,
+                445.04
+              ]
+            },
+            {
+              "line": 4,
+              "class": "person",
+              "xyxy": [
+                174.64,
+                0.0,
+                239.32,
+                119.95
+              ]
+            }
+          ],
+          "segment": {
+            "id": 5784894,
+            "class": "person",
+            "xyxy": [
+              175,
+              0,
+              466,
+              445
+            ],
+            "pixels": 14253
+          },
+          "mask_in_first": 0.762,
+          "mask_in_second": 0.238,
+          "mask_in_union": 1.0,
+          "box_iou": 0.0,
+          "extent_iou": 0.998
+        }
+      ]
+    },
+    {
+      "type": "category_swap",
+      "target": "000000006213",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 1,
+              "class": "sports ball",
+              "xyxy": [
+                406.37,
+                253.32,
+                496.75,
+                286.88
+              ]
+            }
+          ],
+          "segment": {
+            "id": 9155032,
+            "class": "sink",
+            "xyxy": [
+              407,
+              253,
+              497,
+              287
+            ],
+            "pixels": 1717
+          },
+          "iou": 0.978,
+          "mask_in_box": 1.0
+        }
+      ]
+    },
+    {
+      "type": "class_swap",
+      "target": "000000006213",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 1,
+              "class": "sports ball",
+              "xyxy": [
+                406.37,
+                253.32,
+                496.75,
+                286.88
+              ]
+            }
+          ],
+          "segment": {
+            "id": 9155032,
+            "class": "sink",
+            "xyxy": [
+              407,
+              253,
+              497,
+              287
+            ],
+            "pixels": 1717
+          },
+          "iou": 0.978,
+          "mask_in_box": 1.0
+        }
+      ]
+    },
+    {
+      "type": "missing_box",
+      "target": "000000014038",
+      "evidence": [
+        {
+          "boxes": [],
+          "segment": {
+            "id": 4612213,
+            "class": "bed",
+            "xyxy": [
+              303,
+              187,
+              356,
+              260
+            ],
+            "pixels": 2560
+          }
+        }
+      ]
+    },
+    {
+      "type": "category_swap",
+      "target": "000000015272",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 1,
+              "class": "stop sign",
+              "xyxy": [
+                41.95,
+                38.91,
+                276.42,
+                136.78
+              ]
+            }
+          ],
+          "segment": {
+            "id": 5657438,
+            "class": "traffic light",
+            "xyxy": [
+              42,
+              39,
+              276,
+              137
+            ],
+            "pixels": 19357
+          },
+          "iou": 0.995,
+          "mask_in_box": 1.0
+        }
+      ]
+    },
+    {
+      "type": "class_swap",
+      "target": "000000015272",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 1,
+              "class": "stop sign",
+              "xyxy": [
+                41.95,
+                38.91,
+                276.42,
+                136.78
+              ]
+            }
+          ],
+          "segment": {
+            "id": 5657438,
+            "class": "traffic light",
+            "xyxy": [
+              42,
+              39,
+              276,
+              137
+            ],
+            "pixels": 19357
+          },
+          "iou": 0.995,
+          "mask_in_box": 1.0
+        }
+      ]
+    },
+    {
+      "type": "bbox_drift",
+      "target": "000000015440",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 2,
+              "class": "bus",
+              "xyxy": [
+                174.63,
+                159.95,
+                251.9,
+                246.19
+              ]
+            }
+          ],
+          "segment": {
+            "id": 5393787,
+            "class": "bus",
+            "xyxy": [
+              192,
+              183,
+              262,
+              261
+            ],
+            "pixels": 4518
+          },
+          "iou": 0.454,
+          "mask_in_box": 0.698
+        }
+      ]
+    },
+    {
+      "type": "category_swap",
+      "target": "000000017379",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 1,
+              "class": "tv",
+              "xyxy": [
+                145.26,
+                214.29,
+                310.65,
+                322.16
+              ]
+            }
+          ],
+          "segment": {
+            "id": 12288068,
+            "class": "laptop",
+            "xyxy": [
+              145,
+              214,
+              311,
+              322
+            ],
+            "pixels": 11847
+          },
+          "iou": 0.992,
+          "mask_in_box": 1.0
+        }
+      ]
+    },
+    {
+      "type": "class_swap",
+      "target": "000000017379",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 1,
+              "class": "tv",
+              "xyxy": [
+                145.26,
+                214.29,
+                310.65,
+                322.16
+              ]
+            }
+          ],
+          "segment": {
+            "id": 12288068,
+            "class": "laptop",
+            "xyxy": [
+              145,
+              214,
+              311,
+              322
+            ],
+            "pixels": 11847
+          },
+          "iou": 0.992,
+          "mask_in_box": 1.0
+        }
+      ]
+    }
+  ]
+}
