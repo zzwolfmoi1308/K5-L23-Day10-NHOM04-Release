@@ -24,21 +24,42 @@ import math
 import sys
 from pathlib import Path
 
-# Ngưỡng sai số cho bbox_out_of_bounds để tránh báo nhầm do làm tròn số thực ở mép [0, 1]
+# Tập 7 loại lỗi luật File, YOLO và Metadata thuộc phạm vi module này
+DETECTION_RULE_TYPES: frozenset[str] = frozenset({
+    "missing_image",
+    "wrong_hash",
+    "invalid_class",
+    "bbox_out_of_bounds",
+    "duplicate_box",
+    "scene_leak",
+    "guideline_mismatch",
+})
+
+# Ngưỡng sai số cho bbox_out_of_bounds để tránh báo nhầm do làm tròn số thực (.6f) ở mép [0, 1]
 BBOX_OOB_EPS = 1e-3
 
-# Ngưỡng cho duplicate_box (kết hợp cùng lớp + cùng kích thước + độ lệch tâm nhỏ / IoU rất cao)
-DUP_SIZE_PX_TOL = 2.0
-DUP_SIZE_REL_TOL = 0.03
-DUP_CENTER_PX_TOL = 5.0
-DUP_MIN_IOU_NEAR = 0.50
-DUP_HIGH_IOU = 0.85
+# Ngưỡng cho duplicate_box theo 2 chế độ:
+# 1) IoU rất cao + kích thước gần giống nhau (vượt xa ngưỡng chồng tự nhiên <= 0.70 của COCO)
+DUP_HIGH_IOU = 0.80
 DUP_HIGH_IOU_SIZE_REL_TOL = 0.05
+# 2) Kích thước gần như giống hệt + lệch tâm rất nhỏ (bắt cả box nhỏ bị dịch 1-2 px khi IoU < 0.80)
+DUP_SAME_SIZE_REL_TOL = 0.015
+DUP_SAME_SIZE_PX_TOL = 1.0
+DUP_CENTER_PX_TOL = 3.0
+DUP_TINY_BOX_PX = 4.0
+DUP_TINY_CENTER_PX_TOL = 2.5
+# Dự phòng theo tọa độ chuẩn hóa khi thiếu kích thước ảnh trong panoptic.json
+DUP_NORM_SIZE_REL_TOL = 0.005
+DUP_NORM_CENTER_TOL = 0.005
 
 
 def sha256_file(path: Path) -> str:
-    """Tính mã SHA-256 trên nội dung nhị phân (bytes) thật của file."""
-    return hashlib.sha256(path.read_bytes()).hexdigest().lower()
+    """Tính mã SHA-256 trên nội dung nhị phân (bytes, chế độ 'rb') thật của file."""
+    digest = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            digest.update(chunk)
+    return digest.hexdigest().lower()
 
 
 def load_valid_classes(delivery_path: Path) -> set[int]:
@@ -48,7 +69,7 @@ def load_valid_classes(delivery_path: Path) -> set[int]:
         return set(range(80))
 
     valid_ids: set[int] = set()
-    for line in classes_path.read_text(encoding="utf-8").splitlines():
+    for line in classes_path.read_text(encoding="utf-8-sig").splitlines():
         line = line.strip()
         if not line:
             continue
@@ -65,8 +86,18 @@ def load_jobs(delivery_path: Path) -> dict[str, dict[str, str]]:
     jobs_path = delivery_path / "jobs.csv"
     if not jobs_path.is_file():
         return {}
-    with jobs_path.open("r", encoding="utf-8", newline="") as f:
-        return {row["job_id"].strip(): row for row in csv.DictReader(f) if row.get("job_id")}
+    jobs: dict[str, dict[str, str]] = {}
+    with jobs_path.open("r", encoding="utf-8-sig", newline="") as f:
+        for row in csv.DictReader(f):
+            cleaned = {
+                k.strip(): (v.strip() if isinstance(v, str) else "")
+                for k, v in row.items()
+                if k is not None
+            }
+            job_id = cleaned.get("job_id", "")
+            if job_id:
+                jobs[job_id] = cleaned
+    return jobs
 
 
 def load_image_sizes(delivery_path: Path) -> dict[str, tuple[int, int]]:
@@ -74,7 +105,7 @@ def load_image_sizes(delivery_path: Path) -> dict[str, tuple[int, int]]:
     panoptic_path = delivery_path / "panoptic.json"
     if not panoptic_path.is_file():
         return {}
-    data = json.loads(panoptic_path.read_text(encoding="utf-8"))
+    data = json.loads(panoptic_path.read_text(encoding="utf-8-sig"))
     sizes: dict[str, tuple[int, int]] = {}
     for img in data.get("images", []):
         file_name = img.get("file_name")
@@ -156,19 +187,19 @@ def check_metadata_rules(
     scene_splits: dict[str, set[str]] = {}
 
     for meta in metadata_items:
-        img_name = meta.get("image")
-        scene_id = meta.get("scene_id")
-        split = meta.get("split")
-        job_id = meta.get("job_id")
-        img_guideline = meta.get("guideline_version")
+        img_name = str(meta.get("image") or "").strip()
+        scene_id = str(meta.get("scene_id") or "").strip()
+        split = str(meta.get("split") or "").strip().lower()
+        job_id = str(meta.get("job_id") or "").strip()
+        img_guideline = str(meta.get("guideline_version") or "").strip()
 
         if scene_id and split:
-            scene_splits.setdefault(scene_id, set()).add(str(split).strip())
+            scene_splits.setdefault(scene_id, set()).add(split)
 
         # Luật 7: guideline_mismatch (so với guideline khai báo ở job trong jobs.csv)
         if img_name and job_id and job_id in jobs:
             job_guideline = jobs[job_id].get("guideline", "").strip()
-            if str(img_guideline or "").strip() != job_guideline:
+            if img_guideline != job_guideline:
                 findings.append({"type": "guideline_mismatch", "target": img_name})
 
     # Luật 6: scene_leak (một scene xuất hiện ở nhiều hơn 1 split, ví dụ cả train và val)
@@ -186,8 +217,11 @@ def is_duplicate_pair(
 ) -> bool:
     """Kiểm tra 2 box (cùng class_id) có phải là box bị lặp không.
 
-    Kết hợp kích thước gần như giống hệt + độ lệch tâm nhỏ (theo pixel) và độ chồng lấp IoU,
-    tránh báo nhầm các cặp vật thể tự nhiên chồng nhau trong COCO (IoU có thể tới ~0.66).
+    Kết hợp 2 chế độ để vừa bắt được box nhỏ bị lặp lệch 1-2 px (khi IoU thấp hơn 0.80)
+    vừa tránh báo nhầm các cặp vật thể tự nhiên chồng nhau trong COCO (IoU <= ~0.66):
+    1. IoU >= 0.80 và kích thước chênh <= 5% (độc lập độ phân giải, bắt cả box lớn lệch vài px).
+    2. Kích thước gần như giống hệt (<= 1.5% và <= 1 px) + độ lệch tâm <= 3 px
+       (yêu cầu có giao nhau, trừ box siêu nhỏ <= 4 px có thể chỉ chạm cạnh khi dịch 2 px).
     """
     ca, xa, ya, wa, ha = box_a
     cb, xb, yb, wb, hb = box_b
@@ -195,19 +229,16 @@ def is_duplicate_pair(
         return False
 
     iou = compute_iou_xywh(xa, ya, wa, ha, xb, yb, wb, hb)
-    if iou <= 0.0:
-        return False
-
     max_w = max(wa, wb, 1e-9)
     max_h = max(ha, hb, 1e-9)
     rel_dw = abs(wa - wb) / max_w
     rel_dh = abs(ha - hb) / max_h
 
-    # Trường hợp 1: IoU rất cao và kích thước gần như bằng nhau (độc lập độ phân giải)
+    # Chế độ 1: IoU rất cao + kích thước gần giống nhau (vượt xa ngưỡng tự nhiên <= 0.70 của COCO)
     if iou >= DUP_HIGH_IOU and rel_dw <= DUP_HIGH_IOU_SIZE_REL_TOL and rel_dh <= DUP_HIGH_IOU_SIZE_REL_TOL:
         return True
 
-    # Trường hợp 2: có kích thước ảnh (px) -> bắt cả box nhỏ bị dịch vài pixel (IoU thấp hơn 0.85)
+    # Chế độ 2: có kích thước ảnh (px) -> kiểm kích thước gần như giống hệt + độ lệch tâm rất nhỏ
     if img_size is not None:
         img_w, img_h = img_size
         dx_px = abs(xa - xb) * img_w
@@ -215,12 +246,33 @@ def is_duplicate_pair(
         dw_px = abs(wa - wb) * img_w
         dh_px = abs(ha - hb) * img_h
 
-        same_size = (dw_px <= DUP_SIZE_PX_TOL or rel_dw <= DUP_SIZE_REL_TOL) and (
-            dh_px <= DUP_SIZE_PX_TOL or rel_dh <= DUP_SIZE_REL_TOL
+        same_size = (
+            rel_dw <= DUP_SAME_SIZE_REL_TOL
+            and rel_dh <= DUP_SAME_SIZE_REL_TOL
+            and dw_px <= DUP_SAME_SIZE_PX_TOL
+            and dh_px <= DUP_SAME_SIZE_PX_TOL
         )
-        near_center = dx_px <= DUP_CENTER_PX_TOL and dy_px <= DUP_CENTER_PX_TOL
-        if same_size and near_center and iou >= DUP_MIN_IOU_NEAR:
-            return True
+        if same_size:
+            if iou > 0.0 and dx_px <= DUP_CENTER_PX_TOL and dy_px <= DUP_CENTER_PX_TOL:
+                return True
+            min_side_px = min(wa * img_w, ha * img_h, wb * img_w, hb * img_h)
+            if (
+                min_side_px <= DUP_TINY_BOX_PX
+                and dx_px <= DUP_TINY_CENTER_PX_TOL
+                and dy_px <= DUP_TINY_CENTER_PX_TOL
+            ):
+                return True
+        return False
+
+    # Dự phòng khi không có kích thước ảnh trong panoptic.json
+    if (
+        iou > 0.0
+        and rel_dw <= DUP_NORM_SIZE_REL_TOL
+        and rel_dh <= DUP_NORM_SIZE_REL_TOL
+        and abs(xa - xb) <= DUP_NORM_CENTER_TOL
+        and abs(ya - yb) <= DUP_NORM_CENTER_TOL
+    ):
+        return True
 
     return False
 
@@ -247,7 +299,7 @@ def check_yolo_labels(
         has_oob = False
         boxes: list[tuple[int, float, float, float, float]] = []
 
-        for raw_line in label_path.read_text(encoding="utf-8").splitlines():
+        for raw_line in label_path.read_text(encoding="utf-8-sig").splitlines():
             line = raw_line.strip()
             if not line:
                 continue
@@ -322,11 +374,11 @@ def check_detection_rules(delivery_dir: Path | str) -> list[dict[str, str]]:
 
     manifest_items: dict[str, dict] = {}
     if manifest_path.is_file():
-        manifest_items = json.loads(manifest_path.read_text(encoding="utf-8")).get("items", {})
+        manifest_items = json.loads(manifest_path.read_text(encoding="utf-8-sig")).get("items", {})
 
     metadata_items: list[dict] = []
     if metadata_path.is_file():
-        metadata_items = json.loads(metadata_path.read_text(encoding="utf-8")).get("items", [])
+        metadata_items = json.loads(metadata_path.read_text(encoding="utf-8-sig")).get("items", [])
 
     jobs = load_jobs(delivery_path)
     valid_class_ids = load_valid_classes(delivery_path)
