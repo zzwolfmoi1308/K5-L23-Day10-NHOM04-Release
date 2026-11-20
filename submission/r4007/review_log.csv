@@ -1,0 +1,10 @@
+image,type,verdict,note
+000000002153,instance_merge,rejected,[TrungKien0905] Có hai box người và viền segment chỉ bao quanh một người riêng biệt.
+000000006213,category_swap,rejected,[baobao201] Vật trong vùng là bồn rửa và khớp với nhãn sink của panoptic.
+000000006213,class_swap,confirmed,[baobao201] Vật trong vùng là bồn rửa nhưng detection gán lớp sports ball.
+000000014038,missing_box,confirmed,[o0DzeroK0o] Trong ảnh có một chiếc giường nhưng detection thiếu box bao quanh chiếc giường đó.
+000000015272,category_swap,rejected,[diepnguyentuan] Vật trong vùng là đèn giao thông và khớp với nhãn traffic light của panoptic.
+000000015272,class_swap,confirmed,[diepnguyentuan] Vật trong vùng là đèn giao thông nhưng detection gán lớp stop sign.
+000000015440,bbox_drift,confirmed,[TrungKien0905] Box detection lệch khỏi xe buýt còn segment khớp với xe trong ảnh.
+000000017379,category_swap,confirmed,[zzwolfmoi1308] Vật trong vùng là TV nhưng panoptic gán lớp laptop.
+000000017379,class_swap,rejected,[zzwolfmoi1308] Vật trong vùng là TV và khớp với nhãn tv của detection.
