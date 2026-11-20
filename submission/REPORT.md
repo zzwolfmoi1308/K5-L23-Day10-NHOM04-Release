@@ -3,7 +3,8 @@
 ## 1. Số liệu luyện tập
 - Seed chính: `4007` (`lab250_d0b5af9eb610`), đã ghi sự kiện tạo lô và training run `R-021` trong lineage. Seed kiểm tra thêm: `4008`.
 - Kết quả chạy riêng mô-đun panoptic (`invalid_category_id` / `thing_overlap`): `4007` báo 1 / 1, `4008` báo 1 / 2, lô sạch 50 ảnh báo 0 / 0.
-- Kết quả Pha 1 của bảy luật file, YOLO và metadata khớp từng cặp `(type, target)` với phần tương ứng trong `errors.json` đã dùng để tự đo. Lô sạch 50 ảnh báo **0 lỗi luật**. F1 gán nhãn và F1 tổng của bài nộp chờ kết quả review bằng mắt.
+- Kết quả Pha 1 của bảy luật file, YOLO và metadata khớp từng cặp `(type, target)` với phần tương ứng trong `errors.json` đã dùng để tự đo. Lô sạch 50 ảnh báo **0 lỗi luật**.
+- Sau review, `score_findings.py` cho seed `4007` báo F1 lỗi luật ≈ **1,0**, F1 lỗi gán nhãn ≈ **0,8** và F1 tổng ≈ **0,9**. Số liệu được làm tròn đến một chữ số thập phân.
 - Lô sạch seed 5, pool calib 50 ảnh, có **0 ứng viên**. Lô luyện tập seed 4007 có **9 dòng ứng viên trên 6 ảnh** gồm 3 `class_swap`, 3 `category_swap`, 1 `bbox_drift`, 1 `missing_box` và 1 `instance_merge`. Ba ca lệch lớp đều có hai khả năng; người xem ảnh xác định nguồn nào sai.
 - Ghép theo tên lớp trước nếu IoU bbox ≥ 0,48 và ít nhất 91% pixel segment nằm trong box. Loại crowd, chỉ dùng thing có diện tích khai báo khớp mask. Khi đếm pixel trong box, nới 1 px để dung sai làm tròn YOLO và mask.
 - Lệch lớp cần IoU ≥ 0,61 và bao phủ ≥ 86% pixel segment. Lệch box cùng lớp cần IoU ≥ 0,25, bao phủ 22–88% và chiều rộng, chiều cao của box nằm trong 0,60–1,65 lần so với segment. Các ngưỡng này ưu tiên cặp gần nhau và lọc khác biệt do kích thước nhãn.
@@ -24,11 +25,11 @@ python -X utf8 validator/detection_rules.py runs/r4007/delivery --out runs/r4007
 ```
 
 ## 2. Vì sao báo hết ứng viên làm F1 giảm?
-Nếu đưa cả 9 dòng ứng viên của seed 4007 vào lỗi cuối, riêng 3 ảnh bất đồng về lớp đã tạo ít nhất 3 báo thừa vì mỗi ảnh có tối đa một lỗi. Báo thừa làm giảm precision và kéo F1 xuống nếu recall giữ nguyên. Review giữ dòng đúng theo ảnh và giúp loại các lệch tự nhiên giữa hai nguồn nhãn.
+Review seed `4007` xác nhận 5 ứng viên và bác bỏ 4. Đưa cả 9 dòng vào lỗi cuối sẽ tính cả 4 ứng viên bị bác bỏ là lỗi, gồm 3 khả năng đổi lớp sai nguồn và 1 ca segment chỉ bao quanh một người. Báo thừa làm giảm precision và kéo F1 xuống nếu recall giữ nguyên.
 
 ## 3. Quyết định và lineage
-- QC v1: <<ảnh lỗi / tổng số ảnh; tỷ lệ và kết luận>>. Theo ngưỡng lab, tỷ lệ trên 2% dẫn đến `HOLD`. Một mục `scene_leak` tính cho một ảnh.
-- Kết quả `lineage.py impact` cho `R-021`: <<điền sau khi ghi quyết định>>. `R-021` đã train bằng v1. Nếu v1 bị giữ lại do lỗi, cần xem lại kết quả của run hoặc train lại với dữ liệu đã xử lý vì bàn giao v2 không làm thay đổi trọng số của model đã train.
+- QC v1: **16/250 ảnh (6,4%)**, gồm 11 lỗi luật và 5 lỗi gán nhãn đã xác nhận. Mỗi mục `scene_leak` tính cho một ảnh. Tỷ lệ vượt ngưỡng 2%, nên lineage ghi **`HOLD`** cho `lab250_d0b5af9eb610`.
+- `lineage.py impact` trả về `R-021: affected=True action=review_or_retrain`. Run này đã train bằng v1. Cần xem lại kết quả hoặc train lại với dữ liệu đã xử lý vì trọng số của model hiện tại vẫn phản ánh lô v1.
 
 ## 4. Hash chứng minh gì, không chứng minh gì?
 SHA-256 giúp kiểm tra file nhận được có khớp từng byte với file đã lập manifest hay không. Độ đúng của lớp, box và nội dung ảnh cần được kiểm tra bằng quy tắc và review ảnh. Hai file cùng nội dung có thể cùng chứa một nhãn sai.
