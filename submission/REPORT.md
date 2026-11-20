@@ -29,7 +29,7 @@ Review seed `4007` xác nhận 5 ứng viên và bác bỏ 4. Đưa cả 9 dòng
 
 ## 3. Quyết định và lineage
 - QC v1: **16/250 ảnh (6,4%)**, gồm 11 lỗi luật và 5 lỗi gán nhãn đã xác nhận. Mỗi mục `scene_leak` tính cho một ảnh. Tỷ lệ vượt ngưỡng 2%, nên lineage ghi **`HOLD`** cho `lab250_d0b5af9eb610`.
-- `lineage.py impact` trả về `R-021: affected=True action=review_or_retrain`. Run này đã train bằng v1. Cần xem lại kết quả hoặc train lại với dữ liệu đã xử lý vì trọng số của model hiện tại vẫn phản ánh lô v1.
+- `lineage.py impact` trả về `R-021: affected=True action=review_or_retrain`. Run này đã train bằng v1. Cần xem lại kết quả hoặc train lại với dữ liệu đã xử lý vì trọng số của model hiện tại vẫn phản ánh lô v1. Lineage đã ghi release `lab250_d0b5af9eb610_v2` với parent `lab250_d0b5af9eb610`. Lô v2 bàn giao 242 ảnh với 1.678 nhãn detection và tách 8 ảnh để gán lại. Bộ kiểm bàn giao đạt 17/17 mục. [README của lô v2](r4007/handover/lab250_d0b5af9eb610_v2/README.txt)
 
 ## 4. Hash chứng minh gì, không chứng minh gì?
 SHA-256 giúp kiểm tra file nhận được có khớp từng byte với file đã lập manifest hay không. Độ đúng của lớp, box và nội dung ảnh cần được kiểm tra bằng quy tắc và review ảnh. Hai file cùng nội dung có thể cùng chứa một nhãn sai.
@@ -37,7 +37,8 @@ SHA-256 giúp kiểm tra file nhận được có khớp từng byte với file 
 ## 5. Truy vết
 - `tier_a` gồm ảnh trong các cảnh được ticket nêu, thuộc job theo guideline cũ và có ít nhất một box detection thuộc lớp đổi quy tắc.
 - `tier_b` gồm các ảnh ngoài các cảnh được nêu với cùng điều kiện về job và lớp detection. `notify` gồm mã người gán và người kiểm của các job chứa ảnh ở hai tầng.
-- Dùng guideline trong `jobs.csv` vì phiên bản lưu theo ảnh có thể bị `guideline_mismatch`. Kết quả truy vết của nhóm: <<điền sau khi có `trace.json`>>.
+- Dùng guideline trong `jobs.csv` vì phiên bản lưu theo ảnh có thể bị `guideline_mismatch`. Với seed `4007`, ticket nêu lớp `wine glass` ở `scene_156` và `scene_643`. Trong các job dùng v1.2, có 4 ảnh có box lớp này ở hai cảnh được báo và 3 ảnh ở các cảnh khác. Hai tầng cùng dẫn đến người gán `A01` và người kiểm `Q03`. [Danh sách ảnh và người cần báo](r4007/trace.json).
 
 ## 6. Bug hoặc điểm chưa rõ trong lab (nếu có)
 - Trên máy Windows dùng CP1258, `py -X utf8 scripts/run_lab.py --seeds 4007` tạo xong lô v1 nhưng tiến trình con lỗi khi in tiếng Việt, trước khi `run_lab.py` ghi lineage. Nhóm xác nhận `release.json` đã có và dùng `lineage.py record` để ghi hai sự kiện `inject` và `train` cho lô hiện có.
+- Với gói v2 của seed `4007`, H15 đạt trên Windows. Khi mô phỏng cách POSIX sắp tên tệp và ghi hệ điều hành tạo ZIP, cùng 489 tệp cho SHA-256 khác. `pack_release.py` dùng thứ tự của `Path` và thông tin hệ điều hành mặc định của `ZipInfo`. Khi trao đổi giữa các hệ điều hành, có thể kiểm tra trực tiếp ZIP đã bàn giao bằng tệp `.sha256` đi kèm.

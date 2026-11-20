@@ -3,3 +3,4 @@
 {"event": "inject", "release_id": "lab250_d0b5af9eb610", "seed": 4007, "detail": "r4007"}
 {"event": "inject", "release_id": "lab250_d0b5af9eb610", "seed": 4007, "detail": "r4007"}
 {"event": "decision", "release_id": "lab250_d0b5af9eb610", "decision": "HOLD", "detail": "16/250 (6.4%)"}
+{"event": "release", "release_id": "lab250_d0b5af9eb610_v2", "parent": "lab250_d0b5af9eb610"}
