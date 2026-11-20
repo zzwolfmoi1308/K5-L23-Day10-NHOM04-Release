@@ -1,0 +1,387 @@
+{
+  "candidates": [
+    {
+      "type": "missing_box",
+      "target": "img_0003",
+      "evidence": [
+        {
+          "boxes": [],
+          "segment": {
+            "id": 2633882,
+            "class": "giraffe",
+            "xyxy": [
+              484,
+              212,
+              572,
+              484
+            ],
+            "pixels": 10332
+          }
+        }
+      ]
+    },
+    {
+      "type": "missing_box",
+      "target": "img_0043",
+      "evidence": [
+        {
+          "boxes": [],
+          "segment": {
+            "id": 12477179,
+            "class": "zebra",
+            "xyxy": [
+              13,
+              163,
+              91,
+              283
+            ],
+            "pixels": 5728
+          }
+        }
+      ]
+    },
+    {
+      "type": "category_swap",
+      "target": "img_0065",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 2,
+              "class": "person",
+              "xyxy": [
+                39.84,
+                65.7,
+                415.89,
+                589.03
+              ]
+            }
+          ],
+          "segment": {
+            "id": 698194,
+            "class": "tennis racket",
+            "xyxy": [
+              40,
+              66,
+              416,
+              589
+            ],
+            "pixels": 134629
+          },
+          "iou": 0.999,
+          "mask_in_box": 1.0
+        }
+      ]
+    },
+    {
+      "type": "class_swap",
+      "target": "img_0065",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 2,
+              "class": "person",
+              "xyxy": [
+                39.84,
+                65.7,
+                415.89,
+                589.03
+              ]
+            }
+          ],
+          "segment": {
+            "id": 698194,
+            "class": "tennis racket",
+            "xyxy": [
+              40,
+              66,
+              416,
+              589
+            ],
+            "pixels": 134629
+          },
+          "iou": 0.999,
+          "mask_in_box": 1.0
+        }
+      ]
+    },
+    {
+      "type": "category_swap",
+      "target": "img_0073",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 1,
+              "class": "cat",
+              "xyxy": [
+                1.15,
+                72.25,
+                638.1,
+                386.92
+              ]
+            }
+          ],
+          "segment": {
+            "id": 14348156,
+            "class": "airplane",
+            "xyxy": [
+              1,
+              72,
+              638,
+              387
+            ],
+            "pixels": 82693
+          },
+          "iou": 0.999,
+          "mask_in_box": 1.0
+        }
+      ]
+    },
+    {
+      "type": "class_swap",
+      "target": "img_0073",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 1,
+              "class": "cat",
+              "xyxy": [
+                1.15,
+                72.25,
+                638.1,
+                386.92
+              ]
+            }
+          ],
+          "segment": {
+            "id": 14348156,
+            "class": "airplane",
+            "xyxy": [
+              1,
+              72,
+              638,
+              387
+            ],
+            "pixels": 82693
+          },
+          "iou": 0.999,
+          "mask_in_box": 1.0
+        }
+      ]
+    },
+    {
+      "type": "instance_merge",
+      "target": "img_0087",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 7,
+              "class": "bottle",
+              "xyxy": [
+                557.62,
+                213.69,
+                586.87,
+                252.69
+              ]
+            },
+            {
+              "line": 9,
+              "class": "bottle",
+              "xyxy": [
+                526.03,
+                237.88,
+                589.48,
+                315.43
+              ]
+            }
+          ],
+          "segment": {
+            "id": 2031855,
+            "class": "bottle",
+            "xyxy": [
+              526,
+              214,
+              589,
+              315
+            ],
+            "pixels": 3383
+          },
+          "mask_in_first": 0.292,
+          "mask_in_second": 0.845,
+          "mask_in_union": 1.0,
+          "box_iou": 0.077,
+          "extent_iou": 0.985
+        }
+      ]
+    },
+    {
+      "type": "category_swap",
+      "target": "img_0108",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 1,
+              "class": "car",
+              "xyxy": [
+                3.07,
+                318.59,
+                122.02,
+                368.77
+              ]
+            }
+          ],
+          "segment": {
+            "id": 2700974,
+            "class": "truck",
+            "xyxy": [
+              3,
+              319,
+              122,
+              369
+            ],
+            "pixels": 3625
+          },
+          "iou": 0.987,
+          "mask_in_box": 1.0
+        }
+      ]
+    },
+    {
+      "type": "class_swap",
+      "target": "img_0108",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 1,
+              "class": "car",
+              "xyxy": [
+                3.07,
+                318.59,
+                122.02,
+                368.77
+              ]
+            }
+          ],
+          "segment": {
+            "id": 2700974,
+            "class": "truck",
+            "xyxy": [
+              3,
+              319,
+              122,
+              369
+            ],
+            "pixels": 3625
+          },
+          "iou": 0.987,
+          "mask_in_box": 1.0
+        }
+      ]
+    },
+    {
+      "type": "category_swap",
+      "target": "img_0110",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 5,
+              "class": "bench",
+              "xyxy": [
+                26.86,
+                166.08,
+                98.89,
+                282.1
+              ]
+            }
+          ],
+          "segment": {
+            "id": 11209932,
+            "class": "chair",
+            "xyxy": [
+              27,
+              166,
+              99,
+              282
+            ],
+            "pixels": 1793
+          },
+          "iou": 0.995,
+          "mask_in_box": 1.0
+        }
+      ]
+    },
+    {
+      "type": "class_swap",
+      "target": "img_0110",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 5,
+              "class": "bench",
+              "xyxy": [
+                26.86,
+                166.08,
+                98.89,
+                282.1
+              ]
+            }
+          ],
+          "segment": {
+            "id": 11209932,
+            "class": "chair",
+            "xyxy": [
+              27,
+              166,
+              99,
+              282
+            ],
+            "pixels": 1793
+          },
+          "iou": 0.995,
+          "mask_in_box": 1.0
+        }
+      ]
+    },
+    {
+      "type": "bbox_drift",
+      "target": "img_0226",
+      "evidence": [
+        {
+          "boxes": [
+            {
+              "line": 1,
+              "class": "cat",
+              "xyxy": [
+                218.3,
+                173.96,
+                334.38,
+                228.11
+              ]
+            }
+          ],
+          "segment": {
+            "id": 721371,
+            "class": "cat",
+            "xyxy": [
+              235,
+              164,
+              379,
+              231
+            ],
+            "pixels": 6236
+          },
+          "iou": 0.51,
+          "mask_in_box": 0.679
+        }
+      ]
+    }
+  ]
+}

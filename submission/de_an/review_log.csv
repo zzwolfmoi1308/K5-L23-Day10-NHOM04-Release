@@ -1,0 +1,13 @@
+image,type,verdict,note
+img_0003,missing_box,confirmed,[o0DzeroK0o] Tôi thấy con hươu cao cổ trong vùng viền xanh và không thấy khung cam bao quanh nó.
+img_0043,missing_box,confirmed,[o0DzeroK0o] Tôi thấy ngựa vằn và không thấy khung cam.
+img_0065,category_swap,confirmed,[o0DzeroK0o] Tôi thấy người (person) trong vùng được đánh dấu. Nhãn panoptic ghi tennis racket.
+img_0065,class_swap,rejected,"[o0DzeroK0o] Tôi thấy người trong vùng được đánh dấu, khớp nhãn detection person."
+img_0073,category_swap,confirmed,[o0DzeroK0o] Tôi thấy mèo (cat) trong vùng được đánh dấu. Nhãn panoptic ghi airplane.
+img_0073,class_swap,rejected,"[o0DzeroK0o] Tôi thấy mèo trong vùng được đánh dấu, khớp nhãn detection cat."
+img_0087,instance_merge,confirmed,[o0DzeroK0o] Tôi thấy hai chai và vùng viền xanh bao cả hai chai.
+img_0108,category_swap,confirmed,[o0DzeroK0o] Tôi thấy ô tô con (car) trong vùng được đánh dấu. Nhãn panoptic ghi truck.
+img_0108,class_swap,rejected,"[o0DzeroK0o] Tôi thấy ô tô con trong vùng được đánh dấu, khớp nhãn detection car."
+img_0110,category_swap,confirmed,[o0DzeroK0o] Tôi thấy ghế băng (bench) trong vùng được đánh dấu. Nhãn panoptic ghi chair.
+img_0110,class_swap,rejected,"[o0DzeroK0o] Tôi thấy ghế băng trong vùng được đánh dấu, khớp nhãn detection bench."
+img_0226,bbox_drift,confirmed,[o0DzeroK0o] Tôi thấy con mèo và khung cam bị lệch so với con mèo.
